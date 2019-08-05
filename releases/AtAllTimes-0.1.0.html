@@ -1,0 +1,225 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="text/javascript">
+    var TimerProcess = new Array();
+    var ElementsCount = 0;
+    var TimersCount = 0;
+    var TimerSetHours = new Array();
+    var TimerSetMinutes = new Array();
+    var TimerSetSeconds = new Array();
+    var TimerSetMSeconds = new Array();
+    function DisableTimer(TargetTimerID,DisabledStatus) {
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        TargetTimer.TimerHours.disabled = DisabledStatus;
+        TargetTimer.TimerMinutes.disabled = DisabledStatus;
+        TargetTimer.TimerSeconds.disabled = DisabledStatus;
+        TargetTimer.TimerMSeconds.disabled = DisabledStatus;
+    }
+    function ResumeTimer(TargetTimerID) {
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        var AddDate = parseInt(TargetTimer.TimerMSeconds.value,10) + parseInt(TargetTimer.TimerSeconds.value,10) * 1000 + parseInt(TargetTimer.TimerMinutes.value,10) * 60000 + parseInt(TargetTimer.TimerHours.value,10) * 3600000;
+        if(AddDate <= 0 || isNaN(AddDate)) {
+            document.getElementById("Timer"+TargetTimerID+"Warning").style.display = '';
+        } else {
+            document.getElementById("Timer"+TargetTimerID+"Warning").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = '';
+            document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = 'none';
+            var NewDate = AddDate + Date.now();
+            DisableTimer(TargetTimerID,true);
+            TimerProcess[TargetTimerID] = setInterval(function() {
+                var Diff = NewDate - Date.now();
+                if(Diff < 0) { var Diff = 0; }
+                var DiffHours = Math.floor(Diff / 3600000);
+                var DiffMinutes = Math.floor(Diff % 3600000 / 60000);
+                var DiffSeconds = Math.floor(Diff % 60000 / 1000);
+                var DiffMSeconds = Diff % 1000;
+                TargetTimer.TimerHours.value = DiffHours;
+                TargetTimer.TimerMinutes.value = DiffMinutes;
+                TargetTimer.TimerSeconds.value = DiffSeconds;
+                TargetTimer.TimerMSeconds.value = DiffMSeconds;
+                if(Diff <= 1) {
+                    clearInterval(TimerProcess[TargetTimerID]);
+                    DisableTimer(TargetTimerID,false);
+                    TargetTimer.style.backgroundColor = '#f48484';
+                }
+            },1);
+        }
+    }
+    function StartTimer(TargetTimerID) {
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        TimerSetHours[TargetTimerID] = TargetTimer.TimerHours.value;
+        TimerSetMinutes[TargetTimerID] = TargetTimer.TimerMinutes.value;
+        TimerSetSeconds[TargetTimerID] = TargetTimer.TimerSeconds.value;
+        TimerSetMSeconds[TargetTimerID] = TargetTimer.TimerMSeconds.value;
+        ResumeTimer(TargetTimerID);
+    }
+    function StopTimer(TargetTimerID) {
+        clearInterval(TimerProcess[TargetTimerID]);
+        document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = '';
+        document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = '';
+    }
+    function ResetTimer(TargetTimerID) {
+        DisableTimer(TargetTimerID,false);
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        TargetTimer.TimerHours.value = TimerSetHours[TargetTimerID];
+        TargetTimer.TimerMinutes.value = TimerSetMinutes[TargetTimerID];
+        TargetTimer.TimerSeconds.value = TimerSetSeconds[TargetTimerID];
+        TargetTimer.TimerMSeconds.value = TimerSetMSeconds[TargetTimerID];
+        document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = '';
+        document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = 'none';
+    }
+    function AddTimer() {
+        TimersCount++;
+        ElementsCount++;
+        var NewTimerHTML = document.getElementById("TimerTemplate").innerHTML.replace(/Timer 0/g,"Timer "+TimersCount).replace(/Timer0/g,"Timer"+TimersCount).replace(/Timer\(0/g, "Timer\("+TimersCount);
+        var NewTimerContainerHTML = '<div id="Element'+(TimersCount+1)+'Container"></div>';
+        document.getElementById("Element"+ElementsCount+"Container").innerHTML = NewTimerHTML + NewTimerContainerHTML;
+    }
+    function CloseTimer(TargetTimerID) {
+        document.getElementById("Timer"+TargetTimerID).style.display = 'none';
+    }
+    function ShowSettings() {
+        document.getElementById("ShowSettingsButton").style.display = 'none';
+        document.getElementById("Settings").style.display = '';
+    }
+    function HideSettings() {
+        document.getElementById("ShowSettingsButton").style.display = '';
+        document.getElementById("Settings").style.display = 'none';
+    }
+    function ApplyAdvancedSettings() {
+        var Settings = document.getElementById('Settings');
+        if(Settings.ShowMSeconds.checked == true) {
+            var MSecondsStyle = '';
+        } else {
+            var MSecondsStyle = 'none';
+        }
+        var AllTimerMSeconds = document.getElementsByName("TimerMSeconds");
+        for(i = 0; i < AllTimerMSeconds.length; i++) {
+            AllTimerMSeconds[i].style.display = MSecondsStyle;
+        }
+        if(Settings.UseLargeButtons.checked == true) {
+            var LargeButtonsSetStyle = '';
+            var SmallButtonsSetStyle = 'none';
+        } else {
+            var LargeButtonsSetStyle = 'none';
+            var SmallButtonsSetStyle = '';
+        }
+        var AllLargeButtonsSet = document.getElementsByClassName("LargeButtonsSet");
+        var AllSmallButtonsSet = document.getElementsByClassName("SmallButtonsSet");
+        for(i = 0; i < AllLargeButtonsSet.length; i++) {
+            AllLargeButtonsSet[i].style.display = LargeButtonsSetStyle;
+            AllSmallButtonsSet[i].style.display = SmallButtonsSetStyle;
+        }
+    }
+    window.onload = function() { AddTimer(); }
+</script>
+<style type="text/css">
+    body,input,button {font-size:14px;font-family: sans-serif}
+    a {text-decoration:none;transition:color 0.5s}
+    p.FooterButton {text-align:center;font-weight:bold;color:#666}
+    p.FooterButton a {font-weight:bold;color:#666}
+    p.FooterButton a:hover {color:#000}
+    p.Footer {text-align:center;font-size:0.8em;color:#888}
+    p.Footer a {color:#888}  
+    p.Footer a:hover {color:#444}
+    body {margin:0}
+    form.Timer {width:100%}
+    div#TimerTemplate {display:none}
+    table.TimerHeader {width:100%;font-weight:bold;}
+    table.TimerHeader a {color:#666;padding-right:10px}
+    table.TimerHeader a:hover {color:#000}
+    table.TimerHeader a.TimerStart:hover {color:#016901}
+    table.TimerHeader a.TimerStop:hover {color:#d30707}
+    td.TimerTitle {padding:10px}
+    td.TimerTitle:empty:before {content:attr(data-placeholder);color:#CCC}
+    div.TimerWarning {margin-left:15px;margin-right:15px;margin-bottom:15px;padding:5px;background-color:#faa9a9;border:1px #e52323 solid}
+    form.Timer {background-color:#F0F0F0;transition:background-color 0.5s;margin:0}
+    form.Timer:hover {background-color:#cfeef4}
+    form.Timer input {background-color:transparent;border-width:1px;border-color:transparent}
+    table.TimerSet {padding-bottom:10px;text-align:right;margin-left:auto;margin-right:auto}
+    table.TimerSet em {color:#000;}
+    table.TimerSet input[type="number"] {text-align:right;width:2em;font-size:4em;border:0px;margin:0;padding:0}
+    table.TimerSet input[type="number"]:disabled {color:#000}
+    table.TimerSet input.TimerMSeconds {font-size:2em;width:2.5em}
+    button {font-size:1.3em;transition:background-color 0.5s, border-color 0.5s;background-color:transparent;text-align:center;height:40px}
+    button.TimerStart {border-color:transparent;font-weight:bold}
+    button.TimerStart:hover {background-color:#7cffb3}
+    button.TimerStop {border-color:transparent;font-weight:bold}
+    button.TimerStop:hover {background-color:#faa9a9}
+    button.AddButton {width:100%;border-color:transparent}
+    input[type="number"] {-moz-appearance:textfield}
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button {-webkit-appearance:none;margin:0}
+    label.CheckboxContainer {display:block;position:relative;padding-left:20px;margin-bottom: 12px;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none}
+    label.CheckboxContainer input {position:absolute;opacity:0;cursor:pointer;height:0;width:0}
+    label.CheckboxContainer span.Checkmark {position:absolute;top:0;left:0;height:15px;width:15px;background-color:#FFF}
+    label.CheckboxContainer:hover input ~ span.Checkmark {background-color:#CCC}
+    label.CheckboxContainer input:checked ~ span.Checkmark {background-color:#2196F3}
+    label.CheckboxContainer span.Checkmark:after {content:"";position:absolute;display:none}
+    label.CheckboxContainer input:checked ~ span.Checkmark:after {display:block}
+    label.CheckboxContainer span.Checkmark:after {left:6px;top:2px;width:2px;height:7px;border:solid #FFF;border-width: 0 2px 2px 0;-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}
+    fieldset {margin-left:10px;margin-right:10px}
+    fieldset legend {font-weight:bold}
+</style>
+</head>
+<body>
+    <div id="TimerTemplate">
+    <form class="Timer" id="Timer0">
+        <table class="TimerHeader">
+        <tr>
+            <td class="TimerTitle" contenteditable="true" data-placeholder="Add a title..."></td>
+            <td style="text-align:right">
+                <span class="SmallButtonsSet">
+                <a class="TimerStart" href="javascript:StartTimer(0)" id="SmallTimer0Start">START</a>
+                <a class="TimerStop" href="javascript:StopTimer(0)" id="SmallTimer0Stop" style="display:none">STOP</a>
+                <a class="TimerStart" href="javascript:ResumeTimer(0)" id="SmallTimer0Resume" style="display:none">RESUME</a>
+                <a class="TimerStop" href="javascript:ResetTimer(0)" id="SmallTimer0Reset" style="display:none">RESET</a>
+                </span>
+                <a href="javascript:CloseTimer(0)" id="SmallTimer0Close">CLOSE</a>
+            </td>
+        </tr>
+        </table>
+        <div class="TimerWarning" id="Timer0Warning" style="display:none"><b>Unable to start timer:</b> Invalid time</div>
+        <table class="TimerSet">
+            <tr>
+                <td><input type="number" name="TimerHours" value="0" min="0" max="24" step="0" /></td>
+                <td><input type="number" name="TimerMinutes" value="15" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimerSeconds" value="0" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimerMSeconds" class="TimerMSeconds" value="0" min="0" max="999" step="0" style="display:none" /></td>
+            </tr>
+            <tr>
+                <td><label for="TimerHours">hours</label></td>
+                <td><label for="TimerMinutes">minutes</label></td>
+                <td><label for="TimerSeconds">seconds</label></td>
+            </tr>
+        </table>
+        <div class="LargeButtonsSet" style="display:none"><button class="TimerStart" formaction="javascript:StartTimer(0)" id="LargeTimer0Start" style="width:100%">Start</button><button class="TimerStop" formaction="javascript:StopTimer(0)" id="LargeTimer0Stop" style="display:none;width:100%">Stop</button><button class="TimerStart" formaction="javascript:StartTimer(0)" id="LargeTimer0Resume" style="display:none;width:50%">Resume</button><button class="TimerStop" formaction="javascript:StartTimer(0)" id="LargeTimer0Reset" style="display:none;width:50%">Reset</button>
+        </div>
+    </form>
+    </div>
+    <div id="Element1Container"></div>
+    <p class="FooterButton"><a href="javascript:AddTimer()">+ add a timer</a>  <a href="javascript:AddStopwatch()" style="display:none">+ add a stopwatch</a></p>
+    <p class="FooterButton" id="ShowSettingsButton"><a href="javascript:ShowSettings()">more settings ...</a></p>
+    <form class="Timer" id="Settings" style="display:none;padding-bottom:15px">
+        <table class="TimerHeader">
+        <tr>
+            <td class="TimerTitle">Settings</td>
+            <td style="text-align:right"><a href="javascript:HideSettings()">DONE</a></td>
+        </tr>
+        </table>
+        <fieldset>
+            <legend>Display</legend>
+            <label class="CheckboxContainer">Show milliseconds<input type="checkbox" name="ShowMSeconds" onchange="javascript:ApplyAdvancedSettings()" /><span class="Checkmark"></span></label>
+            <label class="CheckboxContainer" style="display:none">Use large start/stop buttons<input type="checkbox" name="UseLargeButtons" onchange="javascript:ApplyAdvancedSettings()" /><span class="Checkmark"></span></label>
+        </fieldset>
+    </form>
+    <p class="Footer"><a href="https://github.com/leestevetk/AllTimes" target="_blank">&#64;AllTimes 0.1.0 - Licensed under GPLv3 - GitHub</a></p>
+</body>
+</html>
