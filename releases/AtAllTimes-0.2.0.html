@@ -1,0 +1,435 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<!--
+    @AllTimes - simple, elegant, multi-threaded web-based timer
+    Version 0.2.0 (20190804)
+    Copyright (C) 2019  leestevetk
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&#64;AllTimes</title>
+<script type="text/javascript">
+    var TimerProcess = new Array();
+    var StopwatchProcess = new Array();
+    var CurrentTimeProcess;
+    var ElementsCount = 0;
+    var TimersCount = 0;
+    var StopwatchesCount = 0;
+    var TimerSetHours = new Array();
+    var TimerSetMinutes = new Array();
+    var TimerSetSeconds = new Array();
+    var TimerSetMSeconds = new Array();
+    function DisableTimeDisplay(ElementType,TargetID,DisabledStatus) {
+        var TargetTimeDisplay = document.getElementById(ElementType+TargetID);
+        TargetTimeDisplay.TimeDisplayHours.disabled = DisabledStatus;
+        TargetTimeDisplay.TimeDisplayMinutes.disabled = DisabledStatus;
+        TargetTimeDisplay.TimeDisplaySeconds.disabled = DisabledStatus;
+        TargetTimeDisplay.TimeDisplayMSeconds.disabled = DisabledStatus;
+    }
+    function ResumeTimer(TargetTimerID) {
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        var AddDate = parseInt(TargetTimer.TimeDisplayMSeconds.value,10) + parseInt(TargetTimer.TimeDisplaySeconds.value,10) * 1000 + parseInt(TargetTimer.TimeDisplayMinutes.value,10) * 60000 + parseInt(TargetTimer.TimeDisplayHours.value,10) * 3600000;
+        if(AddDate <= 0 || isNaN(AddDate)) {
+            document.getElementById("Timer"+TargetTimerID+"Warning").style.display = '';
+        } else {
+            document.getElementById("Timer"+TargetTimerID+"Warning").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = '';
+            document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = 'none';
+            var NewDate = AddDate + Date.now();
+            DisableTimeDisplay("Timer",TargetTimerID,true);
+            TimerProcess[TargetTimerID] = setInterval(function() {
+                var Diff = NewDate - Date.now();
+                if(Diff < 0) { var Diff = 0; }
+                var DiffHours = Math.floor(Diff / 3600000);
+                var DiffMinutes = Math.floor(Diff % 3600000 / 60000);
+                var DiffSeconds = Math.floor(Diff % 60000 / 1000);
+                var DiffMSeconds = Diff % 1000;
+                TargetTimer.TimeDisplayHours.value = DiffHours;
+                TargetTimer.TimeDisplayMinutes.value = DiffMinutes;
+                TargetTimer.TimeDisplaySeconds.value = DiffSeconds;
+                TargetTimer.TimeDisplayMSeconds.value = DiffMSeconds;
+                if(Diff < 1) {
+                    clearInterval(TimerProcess[TargetTimerID]);
+                    TargetTimer.style.backgroundColor = '#f48484';
+                    var Settings = document.getElementById("Settings");
+                    if(Settings.PlaySound.checked == true) {
+                        var SoundPlayer = document.getElementById("Timer"+TargetTimerID+"SoundPlayer");
+                        if(Settings.CustomSound.checked == true) {
+                            SoundPlayer.src = URL.createObjectURL(Settings.CustomSoundFile.files[0]);
+                            SoundPlayer.loop = Settings.LoopSoundFile.checked;
+                        } else {
+                            SoundPlayer.src = "data:audio/mpeg;base64,SUQzBAAAAAAAOVRFTkMAAAAMAAADaVR1bmVzIDkuMQBUU1NFAAAADwAAA0xhdmY1OC4yNy4xMDMAAAAAAAAAAAAAAP/7UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEluZm8AAAAPAAAAGAAACpwAHR0dHScnJycxMTExOzs7O0REREROTk5OWFhYWFhiYmJibGxsbHZ2dnZ/f39/iYmJiZOTk5OTnZ2dnaenp6exsbGxu7u7u8TExMTOzs7OztjY2Nji4uLi7Ozs7Pb29vb/////AAAAAExhdmM1OC41MgAAAAAAAAAAAAAAACQCQAAAAAAAAAqc2/D5QQAAAAAAAAAAAAAAAAAAAAD/+xBkAAAAXQA4FQBACAAADSCgAAEEaHstuAgAAAAANIMAAAAOAA////ggEQQg/LgAAAAAADEJDoAAAAAAf//t1/2jPjfIgeLg/mQWDEABJNy7UAwIAAP///1rT0BjRBcG5YNlgGhQMv/7EmQKifEaHc6fAoAAAAANIOAAAQO0d2WgYa6wAAA0gAAABCXA0RABoALkH2Zh/wsEAN+AFP/87lJBoFaeangTZre///6KBIigXzclD7/VAAAAG9odAAF7KGiwLmWAh5w6zuBaZf/6vf/7EGQMifEgHVZoG2wUAAANIAAAAQJsc1nAJVAAAAA0gAAABEgshAmjYZai834iAAoQI1QqBYTG///6kJKDInjIYOqgAAAD4Oo0h5Dzdb6S///WakOAIcBVRZpaKwGACAaySYuh/Nv///sSZBKJ8NEcz5gPlBAAAA0gAAABAtB1SUEBodgAADSAAAAE/+pj48gWSAsh8MRNAAAfAAAADkMEYPFrV///H9ZoYgrJOEK6yQB1CZFj/////27uuWzL5pYAVbvP3R8WAAAAFWAQAAC1//sQZByL8Lsc0NANPEAAAA0gAAABAxR3PAA3EMgAADSAAAAEJiMA7pq2kv//zheLxuCPMBKGwA04GHKAHwLjSvWan//+CCkAWhkJAAA8AcAADj+FAPA////+CzQF+4u5gkAdACh2Ix7/+xJkJonw2xzV6BBcRAAADSAAAAEClHVnoCzwWAAANIAAAAQIxP///0zwLFGG4LLWOwe4FYsf////D98xgSAIcp4NBwhY/DliJlv///jnH0BagZSCgxYAgAcTPgGJxHAfb//+cSiggD7/+xBkMQnwsh3XUA18RgAADSAAAAECTHVnoCkxOAAANIAAAASO0vOBHGkwwRA7///yZQLpGANRJurV6lhThGBf///lGGAqAYUn5wVh6P////+mpLwQnhSA8FBJNs9QcgAAABkBgAcjhf/7EmQ+ifChHNCADXwyAAANIAAAAQJUc0ygRPEQAAA0gAAABKEP///SWRwEsgAcTkAI9ZUJMHPb///2JMAFAywiXeTAYHDbiq///+o6GDQFO4cGoCJYAUgCDQcCpb///6DoOHCLVQAAAP/7EGRNjfCpHNAoBYuQAAANIAAAAQJAcUJAFg5IAAA0gAAABBqAIAAByhh4CJ6v//9dBESgEgCjGcXhUf///qyhEAGXJhxdlYIAAJ+R5Bxtnnpf//pEQGQBUc2J0qgAAAABCgPAvGoL//sSZFuP8Hgb0AAFO5IAAA0gAAABArRzQgA3MMgAADSAAAAEU///57mGC6EKJ9IUwn///9ZZGoFkAuEBljeJYxl1mALWClFj////3UHAgZAE+linsRy51PRotQAAABpwGAABdaGQK48G//sQZGuJ8KsdVeAQTEAAAA0gAAABAjBzUoA1cQAAADSAAAAEuki///XpiA6Y0WAFQAoyZwZDkQ7D///+s6ABCbHOJAAANAEAAArQIuMYOE////qQWiDaaZoRYkACjAi5VA+CxD3/////+xJkegnwnh3PgBQcQAAADSAAAAECAHNhoBzRGAAANIAAAAQdPCMDgkGFAAAqIMAADGcvCVikz0v/zlv/bc58jgYzhCQ4EjvrFaAEVHR//5NUvP/CWwKIAiFagTu01YAAANdAriUBbS3/+xBkionwnRzbaAsUFAAADSAAAAECVHdTQDTwUAAANIAAAAS1FX//jKmhDg9cAIJEeXSqGHPAUIeX///B4BYDaAFIJUIqYlUPOqLsCo8Zkn///8WolgtZD4gJQg3QcFUMUmVohAF85//7EmSZAfCrHNAQoIB2AAANIAAAAQJgb3XggOH4AAA0gAAABP//j0QLg3gcQsS1DaA31///qOk+YHQyABngTY3Xb/31DZzQAGAABOLagQMMflEIy8///8ZkOPQDGQIgAexcx5L/9bLdy//7EGSnD/CiHNAAIIhyAAANIAAAAQMsczYAN3DIAAA0gAAABKidosWPUXWzGJ5VDLyf//6zgyxBkhHoAsB3i+e//35gUFZ8VjHz406Zs31Qmj//Ql6vW4sOAEVHtM6TS8hiTgAoTmJk//sSZLIJ8MQc12gJhAQAAA0gAAABAoxxUaAmMBgAADSAAAAExsIn4gUbKeVNDBDBFauvIWELpP////8ZPTz+OVK0KGPBJ5DhMjQpoa/9azIarGf0AgIVq6Gf/QCAnKX/NVgwEBGrDUGg//sQZL4J8MIdVFAQNEYAAA0gAAABAnhzW8As8EAAADSAAAAEZQAESk5fAACaX6HEhERBAt3czd3RJEREQW7u7mO6JEhISG5jmO5uSEUaTNhRnQpJUAKAkwVwJBpEiRIhAoKCgoMFBQX/+xJkygnwzhxVUA18NgAADSAAAAEDLHE9IE8PCAAANIAAAARlFBQV3hQUFExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/+xBk0o/wxBzPEOCAdAAADSAAAAECqHE2AIGhyAAANIAAAASqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/7EmTdi/DBHEwBoKByAAANIAAAAQJUcTyhgaHAAAA0gAAABKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqv/7EGTqj/EUHEkCIN0SAAANIAAAAQRIcyQIg1RIAAA0gAAABKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//sSZOoP8QQdSQJAzRIAAA0gAAABA6BzIgKBlEAAADSAAAAEqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//sQZO2P8TgkxgDASEAAAA0gAAABAzh7CgEAQQAAADSAAAAEqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqr/+xJk7wHxfCM14wkYCgAADSAAAAEDbBLOp6QgqAAANIAAAASqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo=";
+                            SoundPlayer.loop = true;
+                        }
+                        SoundPlayer.load();
+                        SoundPlayer.play();
+                    }
+                }
+            },1);
+        }
+    }
+    function StartTimer(TargetTimerID) {
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        TimerSetHours[TargetTimerID] = TargetTimer.TimeDisplayHours.value;
+        TimerSetMinutes[TargetTimerID] = TargetTimer.TimeDisplayMinutes.value;
+        TimerSetSeconds[TargetTimerID] = TargetTimer.TimeDisplaySeconds.value;
+        TimerSetMSeconds[TargetTimerID] = TargetTimer.TimeDisplayMSeconds.value;
+        ResumeTimer(TargetTimerID);
+    }
+    function StopTimer(TargetTimerID) {
+        clearInterval(TimerProcess[TargetTimerID]);
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        if(TargetTimer.TimeDisplayHours.value == "0" && TargetTimer.TimeDisplayMinutes.value == "0" && TargetTimer.TimeDisplaySeconds.value == "0" && TargetTimer.TimeDisplayMSeconds.value == "0") {
+            ResetTimer(TargetTimerID);
+            TargetTimer.style.backgroundColor = '';
+            document.getElementById("Timer"+TargetTimerID+"SoundPlayer").pause();
+        } else {
+            document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = 'none';
+            document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = '';
+            document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = '';
+        }
+        
+    }
+    function ResetTimer(TargetTimerID) {
+        DisableTimeDisplay("Timer",TargetTimerID,false);
+        var TargetTimer = document.getElementById("Timer"+TargetTimerID);
+        TargetTimer.TimeDisplayHours.value = TimerSetHours[TargetTimerID];
+        TargetTimer.TimeDisplayMinutes.value = TimerSetMinutes[TargetTimerID];
+        TargetTimer.TimeDisplaySeconds.value = TimerSetSeconds[TargetTimerID];
+        TargetTimer.TimeDisplayMSeconds.value = TimerSetMSeconds[TargetTimerID];
+        document.getElementById("SmallTimer"+TargetTimerID+"Start").style.display = '';
+        document.getElementById("SmallTimer"+TargetTimerID+"Stop").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Resume").style.display = 'none';
+        document.getElementById("SmallTimer"+TargetTimerID+"Reset").style.display = 'none';
+    }
+    function StartStopwatch(TargetStopwatchID) {
+        var TargetStopwatch = document.getElementById("Stopwatch"+TargetStopwatchID);
+        var StartDiff = parseInt(TargetStopwatch.TimeDisplayMSeconds.value,10) + parseInt(TargetStopwatch.TimeDisplaySeconds.value,10) * 1000 + parseInt(TargetStopwatch.TimeDisplayMinutes.value,10) * 60000 + parseInt(TargetStopwatch.TimeDisplayHours.value,10) * 3600000;
+        if(StartDiff < 0 || isNaN(StartDiff)) {
+            document.getElementById("Stopwatch"+TargetStopwatchID+"Warning").style.display = '';
+        } else {
+            document.getElementById("Stopwatch"+TargetStopwatchID+"Warning").style.display = 'none';
+            document.getElementById("SmallStopwatch"+TargetStopwatchID+"Start").style.display = 'none';
+            document.getElementById("SmallStopwatch"+TargetStopwatchID+"Stop").style.display = '';
+            document.getElementById("SmallStopwatch"+TargetStopwatchID+"Clear").style.display = 'none';
+            DisableTimeDisplay("Stopwatch",TargetStopwatchID,true);
+            var StartDate = Date.now() - StartDiff;
+            StopwatchProcess[TargetStopwatchID] = setInterval(function() {
+                var Diff = Date.now() - StartDate;
+                if(Diff < 0) { var Diff = 0; }
+                var DiffHours = Math.floor(Diff / 3600000);
+                var DiffMinutes = Math.floor(Diff % 3600000 / 60000);
+                var DiffSeconds = Math.floor(Diff % 60000 / 1000);
+                var DiffMSeconds = Diff % 1000;
+                TargetStopwatch.TimeDisplayHours.value = DiffHours;
+                TargetStopwatch.TimeDisplayMinutes.value = DiffMinutes;
+                TargetStopwatch.TimeDisplaySeconds.value = DiffSeconds;
+                TargetStopwatch.TimeDisplayMSeconds.value = DiffMSeconds;
+            },1);
+        }
+    }
+    function StopStopwatch(TargetStopwatchID) {
+        clearInterval(StopwatchProcess[TargetStopwatchID]);
+        var TargetStopwatch = document.getElementById("Stopwatch"+TargetStopwatchID);
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Start").style.display = '';
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Stop").style.display = 'none';
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Clear").style.display = '';
+    }
+    function ClearStopwatch(TargetStopwatchID) {
+        DisableTimeDisplay("Stopwatch",TargetStopwatchID,false);
+        var TargetStopwatch = document.getElementById("Stopwatch"+TargetStopwatchID);
+        TargetStopwatch.TimeDisplayHours.value = 0;
+        TargetStopwatch.TimeDisplayMinutes.value = 0;
+        TargetStopwatch.TimeDisplaySeconds.value = 0;
+        TargetStopwatch.TimeDisplayMSeconds.value = 0;
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Start").style.display = '';
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Stop").style.display = 'none';
+        document.getElementById("SmallStopwatch"+TargetStopwatchID+"Clear").style.display = 'none';
+    }
+    function AddElement(ElementType) {
+        ElementsCount++;
+        if(ElementType == "timer") {
+            TimersCount++;
+            var NewElementHTML = document.getElementById("TimerTemplate").innerHTML.replace(/Timer0/g,"Timer"+TimersCount).replace(/Timer\(0/g, "Timer\("+TimersCount);
+        } else {
+            StopwatchesCount++;
+            var NewElementHTML = document.getElementById("StopwatchTemplate").innerHTML.replace(/Stopwatch0/g,"Stopwatch"+StopwatchesCount).replace(/Stopwatch\(0/g, "Stopwatch\("+StopwatchesCount);
+        }
+        var NewElementContainerHTML = '\<div id="Element'+(ElementsCount+1)+'Container"\>\</div\>';
+        document.getElementById("Element"+ElementsCount+"Container").innerHTML = NewElementHTML + NewElementContainerHTML;
+    }
+    function CloseTimer(TargetTimerID) {
+        document.getElementById("Timer"+TargetTimerID).style.display = 'none';
+    }
+    function CloseStopwatch(TargetStopwatchID) {
+        document.getElementById("Stopwatch"+TargetStopwatchID).style.display = 'none';
+    }
+    function ShowSettings() {
+        document.getElementById("Settings").style.display = '';
+    }
+    function HideSettings() {
+        document.getElementById("Settings").style.display = 'none';
+    }
+    function ApplyAdvancedSettings() {
+        var Settings = document.getElementById("Settings");
+        if(Settings.ShowCurrentTime.checked == true) {
+            document.getElementById("CurrentTimeContainer").style.display = '';
+            function UpdateCurrentTime() {
+                var CurrentTime = new Date();
+                var CurrentTimeString = CurrentTime.toLocaleTimeString();
+                document.getElementById("LargeCurrentTimeDisplay").innerHTML = CurrentTimeString;
+                document.getElementById("SmallCurrentTimeDisplay").innerHTML = CurrentTimeString;
+            }
+            UpdateCurrentTime();
+            CurrentTimeProcess = setInterval(function () { UpdateCurrentTime() ,300});
+        } else {
+            document.getElementById("CurrentTimeContainer").style.display = 'none';
+            clearInterval(CurrentTimeProcess);
+        }
+        if(Settings.ShowMSeconds.checked == true) {
+            var MSecondsStyle = '';
+        } else {
+            var MSecondsStyle = 'none';
+        }
+        var AllTimeDisplayMSeconds = document.getElementsByName("TimeDisplayMSeconds");
+        for(i = 0; i < AllTimeDisplayMSeconds.length; i++) {
+            AllTimeDisplayMSeconds[i].style.display = MSecondsStyle;
+        }
+        if(Settings.UseLargeButtons.checked == true) {
+            var LargeButtonsSetStyle = '';
+            var SmallButtonsSetStyle = 'none';
+        } else {
+            var LargeButtonsSetStyle = 'none';
+            var SmallButtonsSetStyle = '';
+        }
+        var AllLargeButtonsSet = document.getElementsByClassName("LargeButtonsSet");
+        var AllSmallButtonsSet = document.getElementsByClassName("SmallButtonsSet");
+        for(i = 0; i < AllLargeButtonsSet.length; i++) {
+            AllLargeButtonsSet[i].style.display = LargeButtonsSetStyle;
+            AllSmallButtonsSet[i].style.display = SmallButtonsSetStyle;
+        }
+    }
+    function LaunchCustomSound() {
+        var Settings = document.getElementById("Settings");
+        var TestAudio = document.createElement("audio");
+        var AudioFormatsSupported = "";
+        if(TestAudio.canPlayType("audio/mpeg") != "") { AudioFormatsSupported = AudioFormatsSupported + "audio/mpeg,"; }
+        if(TestAudio.canPlayType("audio/ogg") != "") { AudioFormatsSupported = AudioFormatsSupported + "audio/ogg,"; }
+        if(TestAudio.canPlayType("audio/mp4") != "") { AudioFormatsSupported = AudioFormatsSupported + "audio/mp4,audio/x-m4a,"; }
+        if(TestAudio.canPlayType("audio/x-aiff") != "") { AudioFormatsSupported = AudioFormatsSupported + "audio/x-aiff,"; }
+        Settings.CustomSoundFile.setAttribute("accept",AudioFormatsSupported);
+        Settings.CustomSoundFile.click();
+    }
+    function ChangeCustomSound() {
+        var Settings = document.getElementById("Settings");
+        if(Settings.CustomSoundFile.files.length == 0) {
+            Settings.CustomSound.checked = false;
+            LaunchCustomSound();
+        }
+    }
+    function ChangeCustomSoundFile() {
+        var Settings = document.getElementById("Settings");
+        if(Settings.CustomSoundFile.files.length == 0) {
+            Settings.CustomSound.checked = false;
+            document.getElementById('CustomSoundFilenameContainer').style.display = 'none';
+        } else {
+            Settings.CustomSound.checked = true;
+            Settings.PlaySound.checked = true;
+            document.getElementById('CustomSoundFilenameContainer').style.display = '';
+            document.getElementById('CustomSoundFilename').innerHTML = Settings.CustomSoundFile.files[0].name;
+        }
+    }
+    function ExpandCurrentTime() {
+        document.getElementById("LargeCurrentTimeContainer").style.display = '';
+        document.getElementById("SmallCurrentTimeContainer").style.display = 'none';
+    }
+    function CollapseCurrentTime() {
+        document.getElementById("LargeCurrentTimeContainer").style.display = 'none';
+        document.getElementById("SmallCurrentTimeContainer").style.display = '';
+    }
+    window.onload = function() { AddElement("timer"); }
+</script>
+<style type="text/css">
+    table#NaviBar {position:fixed;background-color:rgba(255, 255, 255, 0.9)}
+    div#NaviBarAfter {height:40px}
+    body,input,button {font-size:14px;font-family: sans-serif}
+    a {text-decoration:none;transition:color 0.5s}
+    audio {display:none}
+    p.Footer {text-align:center;font-size:0.8em;color:#888}
+    p.Footer a {color:#888}  
+    body {margin:0}
+    form.Element {width:100%}
+    div#TimerTemplate,div#StopwatchTemplate {display:none}
+    table.ElementHeader {width:100%;font-weight:bold;}
+    table.ElementHeader td {vertical-align:top;padding:10px}
+    table.ElementHeader a {color:#666;padding-right:10px}
+    td.ElementTitle:empty:before {content:attr(data-placeholder);color:#CCC}
+    div.ElementWarning {margin-left:15px;margin-right:15px;margin-bottom:15px;padding:5px;background-color:#faa9a9;border:1px #e52323 solid}
+    form.Element {background-color:#F0F0F0;transition:background-color 0.5s;margin:0}
+    form.Element:hover {background-color:#cfeef4}
+    form.Element input {background-color:transparent;border-width:1px;border-color:transparent}
+    table.TimeDisplay {padding-bottom:10px;text-align:right;margin-left:auto;margin-right:auto}
+    table.TimeDisplay em {color:#000;}
+    table.TimeDisplay input[type="number"] {text-align:right;width:1.8em;font-size:4em;border:0px;margin:0;padding:0}
+    table.TimeDisplay input[type="number"]:disabled {color:#000}
+    table.TimeDisplay input.TimeDisplayMSeconds {font-size:2em;width:2em}
+    button {font-size:1.3em;transition:background-color 0.5s, border-color 0.5s;background-color:transparent;text-align:center;height:40px}
+    button.StartButton {border-color:transparent;font-weight:bold}
+    button.StopButton {border-color:transparent;font-weight:bold}
+    input[type="file"] {display:none}
+    input[type="number"] {-moz-appearance:textfield}
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button {-webkit-appearance:none;margin:0}
+    label.CheckboxContainer {display:block;position:relative;padding-left:20px;margin-bottom:12px;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none}
+    label.CheckboxContainer input {position:absolute;opacity:0;cursor:pointer;height:0;width:0}
+    label.CheckboxContainer span.Checkmark {position:absolute;top:0;left:0;height:15px;width:15px;background-color:#EEE}
+    label.CheckboxContainer input:checked ~ span.Checkmark {background-color:#2196F3}
+    label.CheckboxContainer span.Checkmark:after {content:"";position:absolute;display:none}
+    label.CheckboxContainer input:checked ~ span.Checkmark:after {display:block}
+    label.CheckboxContainer span.Checkmark:after {left:6px;top:2px;width:2px;height:7px;border:solid #FFF;border-width: 0 2px 2px 0;-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}
+    fieldset {margin-left:10px;margin-right:10px;margin-bottom:10px}
+    fieldset legend {font-weight:bold;margin-bottom:10px}
+    div.SubFieldset {margin-left:25px}
+    @media (hover:hover) {
+        table.ElementHeader a:hover {color:#000}
+        p.Footer a:hover {color:#444}
+        table.ElementHeader a.StartButton:hover {color:#016901}
+        table.ElementHeader a.StopButton:hover {color:#d30707}
+        button.StartButton:hover {background-color:#7cffb3}
+        label.CheckboxContainer:hover input ~ span.Checkmark {background-color:#CCC}
+        button.StopButton:hover {background-color:#faa9a9}
+    }
+</style>
+</head>
+<body>
+    <div id="TimerTemplate">
+    <form class="Element" id="Timer0">
+        <table class="ElementHeader">
+        <tr>
+            <td class="ElementTitle" contenteditable="true" data-placeholder="Title for this timer..."></td>
+            <td style="text-align:right">
+                <span class="SmallButtonsSet">
+                <a class="StartButton" href="javascript:StartTimer(0)" id="SmallTimer0Start">START</a>
+                <a class="StopButton" href="javascript:StopTimer(0)" id="SmallTimer0Stop" style="display:none">STOP</a>
+                <a class="StartButton" href="javascript:ResumeTimer(0)" id="SmallTimer0Resume" style="display:none">RESUME</a>
+                <a class="StopButton" href="javascript:ResetTimer(0)" id="SmallTimer0Reset" style="display:none">RESET</a>
+                </span>
+                <a href="javascript:CloseTimer(0)" id="SmallTimer0Close">CLOSE</a>
+            </td>
+        </tr>
+        </table>
+        <div class="ElementWarning" id="Timer0Warning" style="display:none"><b>Unable to start timer:</b> Invalid time</div>
+        <table class="TimeDisplay">
+            <tr>
+                <td><input type="number" name="TimeDisplayHours" value="0" min="0" max="24" step="0" /></td>
+                <td><input type="number" name="TimeDisplayMinutes" value="15" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimeDisplaySeconds" value="0" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimeDisplayMSeconds" class="TimeDisplayMSeconds" value="0" min="0" max="999" step="0" style="display:none" /></td>
+            </tr>
+            <tr>
+                <td><label for="TimeDisplayHours">hours</label></td>
+                <td><label for="TimeDisplayMinutes">minutes</label></td>
+                <td><label for="TimeDisplaySeconds">seconds</label></td>
+            </tr>
+        </table>
+        <div class="LargeButtonsSet" style="display:none"><button class="StartButton" formaction="javascript:StartTimer(0)" id="LargeTimer0Start" style="width:100%">Start</button><button class="StopButton" formaction="javascript:StopTimer(0)" id="LargeTimer0Stop" style="display:none;width:100%">Stop</button><button class="StartButton" formaction="javascript:StartTimer(0)" id="LargeTimer0Resume" style="display:none;width:50%">Resume</button><button class="StopButton" formaction="javascript:StartTimer(0)" id="LargeTimer0Reset" style="display:none;width:50%">Reset</button>
+        </div>
+    </form>
+    <audio id="Timer0SoundPlayer"></audio>
+    </div>
+    <div id="StopwatchTemplate">
+    <form class="Element" id="Stopwatch0">
+        <table class="ElementHeader">
+        <tr>
+            <td class="ElementTitle" contenteditable="true" data-placeholder="Title for this stopwatch..."></td>
+            <td style="text-align:right">
+                <span class="SmallButtonsSet">
+                <a class="StartButton" href="javascript:StartStopwatch(0)" id="SmallStopwatch0Start">START</a>
+                <a class="StopButton" href="javascript:StopStopwatch(0)" id="SmallStopwatch0Stop" style="display:none">STOP</a>
+                <a class="StopButton" href="javascript:ClearStopwatch(0)" id="SmallStopwatch0Clear" style="display:none">CLEAR</a>
+                </span>
+                <a href="javascript:CloseStopwatch(0)" id="SmallStopwatch0Close">CLOSE</a>
+            </td>
+        </tr>
+        </table>
+        <div class="ElementWarning" id="Stopwatch0Warning" style="display:none"><b>Unable to start stopwatch:</b> Invalid time</div>
+        <table class="TimeDisplay">
+            <tr>
+                <td><input type="number" name="TimeDisplayHours" value="0" min="0" max="24" step="0" /></td>
+                <td><input type="number" name="TimeDisplayMinutes" value="0" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimeDisplaySeconds" value="0" min="0" max="60" step="0" /></td>
+                <td><input type="number" name="TimeDisplayMSeconds" class="TimeDisplayMSeconds" value="0" min="0" max="999" step="0" style="display:none" /></td>
+            </tr>
+            <tr>
+                <td><label for="TimeDisplayHours">hours</label></td>
+                <td><label for="TimeDisplayMinutes">minutes</label></td>
+                <td><label for="TimeDisplaySeconds">seconds</label></td>
+            </tr>
+        </table>
+    </form>
+    </div>
+    <table class="ElementHeader" id="NaviBar">
+        <tr>
+            <td><a href="javascript:AddElement('timer')">+ timer</a> <a href="javascript:AddElement('Stopwatch')">+ stopwatch</a> <a href="javascript:ShowSettings()">settings</a></td>
+            <td style="text-align:right;display:none"><span style="margin-right:10px">ALL /</span><a class="StartButton" href="javascript:">START</a><a class="StopButton" href="javascript:">STOP</a></td>
+        </tr>
+    </table>
+    <div id="NaviBarAfter"></div>
+    <form id="Settings" style="display:none;padding-bottom:15px">
+        <table class="ElementHeader">
+        <tr>
+            <td>Settings</td>
+            <td style="text-align:right"><a href="javascript:HideSettings()">DONE</a></td>
+        </tr>
+        </table>
+        <fieldset>
+            <legend>Display</legend>
+            <label class="CheckboxContainer">Show current date and time<input type="checkbox" name="ShowCurrentTime" onchange="javascript:ApplyAdvancedSettings()" /><span class="Checkmark"></span></label>
+            <label class="CheckboxContainer">Show milliseconds<input type="checkbox" name="ShowMSeconds" onchange="javascript:ApplyAdvancedSettings()" /><span class="Checkmark"></span></label>
+            <label class="CheckboxContainer" style="display:none">Use large start/stop buttons<input type="checkbox" name="UseLargeButtons" onchange="javascript:ApplyAdvancedSettings()" /><span class="Checkmark"></span></label>
+        </fieldset>
+        <fieldset>
+            <legend>Sound</legend>
+            <label class="CheckboxContainer">Play a sound when timer reaches zero<input type="checkbox" name="PlaySound" /><span class="Checkmark"></span></label>
+            <div class="SubFieldset">
+                <label class="CheckboxContainer">Custom sound file<input type="checkbox" name="CustomSound" onchange="javascript:ChangeCustomSound()" /><span class="Checkmark"></span> <span id="CustomSoundFilenameContainer" style="display:none">(<span id="CustomSoundFilename"></span> - <a href="javascript:LaunchCustomSound()">change</a>)</span></label><input type="file" name="CustomSoundFile" onchange="javascript:ChangeCustomSoundFile()" />
+                <label class="CheckboxContainer">Loop sound file<input type="checkbox" name="LoopSoundFile"/><span class="Checkmark"></span></label>
+            </div>
+        </fieldset>
+    </form>
+    <div id="CurrentTimeContainer" style="display:none">
+        <table class="ElementHeader" id="SmallCurrentTimeContainer">
+            <tr>
+                <td>Current Time: <b><span id="SmallCurrentTimeDisplay"></span></b></td>
+                <td style="text-align:right"><a href="javascript:ExpandCurrentTime()">EXPAND</a></td>
+            </tr>
+        </table>
+        <form class="Element" id="LargeCurrentTimeContainer" style="display:none">
+            <table class="ElementHeader">
+            <tr>
+                <td>Current Time</td>
+                <td style="text-align:right"><a href="javascript:CollapseCurrentTime()">COLLAPSE</a></td>
+            </tr>
+            </table>
+            <div style="padding-bottom:10px;text-align:center;font-size:4em" id="LargeCurrentTimeDisplay"></div>
+        </form>
+    </div>
+    <div id="Element1Container"></div>
+    <p class="Footer"><a href="https://github.com/leestevetk/AllTimes" target="_blank">&#64;AllTimes 0.2.0 - Licensed under GPLv3 - GitHub</a></p>
+</body>
+</html>
