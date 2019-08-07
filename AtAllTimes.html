@@ -238,6 +238,7 @@
     function ResetSettings() {
         document.getElementById("Settings").reset();
         ApplySettings();
+        CheckCustomSound();
     }
     function HideSettingsWarning(SettingsType) {
         function HideSelectSettingsWarning(SettingsID) { document.getElementById("Settings"+SettingsID+"WarningBanner").style.display = 'none'; }
@@ -310,16 +311,27 @@
     }
     function CheckCustomSound() {
         var Settings = document.getElementById("Settings");
-        var TestAudio = document.createElement("audio");
-        if(TestAudio.canPlayType(Settings.CustomSoundFile.files[0].type) == "") {
-            ShowSettingsWarning("Sound", "The selected file ("+Settings.CustomSoundFile.files[0].name+") is not an audio file supported by your browser.");
+        function HideFilename() { 
             Settings.CustomSound.checked = false;
-            Settings.CustomSoundFile.value = "";
             document.getElementById('CustomSoundFilenameContainer').style.display = 'none';
+        }
+        if(Settings.CustomSoundFile.files.length == 0) {
+            HideFilename();
             return false;
         } else {
-            HideSettingsWarning("Sound");
-            return true;
+            var TestAudio = document.createElement("audio");
+            if(TestAudio.canPlayType(Settings.CustomSoundFile.files[0].type) == "") {
+                ShowSettingsWarning("Sound", "Your browser cannot play the selected file ("+Settings.CustomSoundFile.files[0].name+").");
+                Settings.CustomSoundFile.value = "";
+                return false;
+            } else {
+                Settings.CustomSound.checked = true;
+                Settings.PlaySound.checked = true;
+                document.getElementById('CustomSoundFilenameContainer').style.display = '';
+                document.getElementById('CustomSoundFilename').innerHTML = Settings.CustomSoundFile.files[0].name;
+                HideSettingsWarning("Sound");
+                return true;
+            }
         }
     }
     function ChangeCustomSound() {
@@ -328,15 +340,6 @@
         if(Settings.CustomSoundFile.files.length == 0) {
             Settings.CustomSound.checked = false;
             LaunchCustomSound();
-        }
-    }
-    function ChangeCustomSoundFile() {
-        var Settings = document.getElementById("Settings");
-        if(Settings.CustomSoundFile.files.length != 0 && CheckCustomSound() == true) {
-            Settings.CustomSound.checked = true;
-            Settings.PlaySound.checked = true;
-            document.getElementById('CustomSoundFilenameContainer').style.display = '';
-            document.getElementById('CustomSoundFilename').innerHTML = Settings.CustomSoundFile.files[0].name;
         }
     }
     function ExpandCurrentTime() {
@@ -441,7 +444,7 @@
     function SelectCheckboxChange(TargetElementID) {
         var TargetElement = document.getElementById(TargetElementID);
         if(TargetElement.SelectCheckbox.checked == true) {
-            TargetElement.setAttribute("class", "ElementSelect");
+            TargetElement.setAttribute("class", "Element ElementSelect");
         } else {
             TargetElement.setAttribute("class", "Element");
         }
@@ -635,7 +638,7 @@
             <div class="ElementWarning" id="SettingsSoundWarningBanner" style="display:none"><b>Unable to apply settings:</b> <span id="SettingsSoundWarningMessage"></span></div>
             <label class="CheckboxContainer">Play a sound when timer reaches zero<input type="checkbox" name="PlaySound" onchange="javascript:PlayEmptyAudio()" /><span class="Checkmark"></span><audio id="EmptyAudio"></audio></label>
             <div class="SubFieldset">
-                <label class="CheckboxContainer">Custom sound file<input type="checkbox" name="CustomSound" onchange="javascript:ChangeCustomSound()" /><span class="Checkmark"></span> <span id="CustomSoundFilenameContainer" style="display:none">(<span id="CustomSoundFilename"></span> - <a href="javascript:LaunchCustomSound()">change</a>)</span></label><input type="file" name="CustomSoundFile" onchange="javascript:ChangeCustomSoundFile()" accept="audio/*,audio/x-m4a" />
+                <label class="CheckboxContainer">Custom sound file<input type="checkbox" name="CustomSound" onchange="javascript:ChangeCustomSound()" /><span class="Checkmark"></span> <span id="CustomSoundFilenameContainer" style="display:none">(<span id="CustomSoundFilename"></span> - <a href="javascript:LaunchCustomSound()">change</a>)</span></label><input type="file" name="CustomSoundFile" onchange="javascript:CheckCustomSound()" accept="audio/*,audio/x-m4a" />
                 <label class="CheckboxContainer">Loop sound file<input type="checkbox" name="LoopSoundFile"/><span class="Checkmark"></span></label>
             </div>
         </fieldset>
