@@ -17,7 +17,7 @@ You may run as many timers and stopwatches you want - on the same browser page.
 @AllTimes is highly customisable: you may change anything - from displaying milliseconds on the timer, to the sound to be played when it reaches zero (and more customisation options to come).
 
 ### Works Offline
-The entirity of @AllTimes is contained in one HTML file. @AllTimes use pure syntax and no external libraries. This means that you may download @AllTimes and run it offline.
+The entirety of @AllTimes is contained in one HTML file. @AllTimes use pure syntax and no external libraries. This means that you may download @AllTimes and run it offline.
 
 ## Licence
 Copyright (C) 2019  Steve's Toolkit
