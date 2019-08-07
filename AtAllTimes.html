@@ -5,8 +5,8 @@
     @AllTimes - simple, free, multi-threaded web-based timer
     Version 0.4.0 (20190810)
     Copyright (C) 2019  Steve's Toolkit
-    Website: http://leesteve.tk/
-    GitHub: https://github.com/leestevetk/
+    Website: http://leesteve.tk/AllTimes/
+    GitHub: https://github.com/leestevetk/AllTimes/
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -221,11 +221,13 @@
         TimerState[TargetTimerID] = 0;
         document.getElementById("Timer"+TargetTimerID).style.display = 'none';
         document.getElementById("Timer"+TargetTimerID+"SoundPlayer").pause();
+        document.getElementById("Timer"+TargetTimerID).SelectCheckbox.checked = false;
     }
     function CloseStopwatch(TargetStopwatchID) {
         StopStopwatch(TargetStopwatchID);
         StopwatchState[TargetStopwatchID] = 0;
         document.getElementById("Stopwatch"+TargetStopwatchID).style.display = 'none';
+        document.getElementById("Stopwatch"+TargetStopwatchID).SelectCheckbox.checked = false;
     }
     function ShowSettings() {
         document.getElementById("Settings").style.display = '';
@@ -322,6 +324,7 @@
     }
     function ChangeCustomSound() {
         var Settings = document.getElementById("Settings");
+        PlayEmptyAudio();
         if(Settings.CustomSoundFile.files.length == 0) {
             Settings.CustomSound.checked = false;
             LaunchCustomSound();
@@ -377,6 +380,43 @@
             }
         }
     }
+    function StartSelected() {
+        for(i=1; i < TimerState.length; i++) {
+            if(document.getElementById("Timer"+i).SelectCheckbox.checked==true) {      
+                switch(TimerState[i]) {
+                    case 1:
+                        StartTimer(i);
+                        break;
+                    case 3:
+                        ResumeTimer(i);
+                        break;
+                }
+            }
+        }
+        for(i=1; i < StopwatchState.length; i++) {
+            if(document.getElementById("Stopwatch"+i).SelectCheckbox.checked==true) { 
+                switch(StopwatchState[i]) {
+                    case 1:
+                        StartStopwatch(i);
+                        break;
+                    case 3:
+                        break;
+                }
+            }
+        }
+    }
+    function StopSelected() {
+        for(i=1; i < TimerState.length; i++) {
+            if(TimerState[i] == 2 && document.getElementById("Timer"+i).SelectCheckbox.checked==true) {
+                StopTimer(i);
+            }
+        }
+        for(i=1; i < StopwatchState.length; i++) {
+            if(StopwatchState[i] == 2 && document.getElementById("Stopwatch"+i).SelectCheckbox.checked==true) {
+                StopStopwatch(i);
+            }
+        }
+    }
     window.onload = function() {
         AddElement("timer");
         CurrentTimeProcess = setInterval(function () {
@@ -398,13 +438,37 @@
         },100);
         ApplySettings();
     }
+    function SelectCheckboxChange(TargetElementID) {
+        var TargetElement = document.getElementById(TargetElementID);
+        if(TargetElement.SelectCheckbox.checked == true) {
+            TargetElement.setAttribute("class", "ElementSelect");
+        } else {
+            TargetElement.setAttribute("class", "Element");
+        }
+        UpdateNaviBar();
+    }
+    function UpdateNaviBar() {
+        var AllCheckbox = document.getElementsByName("SelectCheckbox");
+        var AnyChecked = 0;
+        for(i = 0; i < AllCheckbox.length; i++) {
+            if(AllCheckbox[i].checked == true) {
+                AnyChecked = 1;
+            }
+        }
+        if(AnyChecked == 1) {
+            document.getElementById("NaviBarButtonsSelected").style.display = '';
+        } else {
+            document.getElementById("NaviBarButtonsSelected").style.display = "none";
+        }
+    }
+    function PlayEmptyAudio() { document.getElementById("EmptyAudio").play(); }
 </script>
 <style type="text/css">
     table#NaviBar {position:fixed;background-color:rgba(255, 255, 255, 0.9)}
     table#NaviBar td {height:1rem}
     table#NaviBar td:nth-child(2) {text-align:right}
     div#NaviBarAfter {height:2.5rem}
-    @media only screen and (max-width:500px) {
+    @media only screen and (max-width:600px) {
         table#NaviBar td {display:block}
         table#NaviBar td:nth-child(2) {text-align:left}
         div#NaviBarAfter {height:5rem}
@@ -420,7 +484,7 @@
     table.ElementHeader {width:100%;font-weight:bold;}
     table.ElementHeader td {vertical-align:top;padding:10px}
     table.ElementHeader a {color:#666;padding-right:10px}
-    div.ElementTitle:empty:before {content:attr(data-placeholder);color:#CCC}
+    span.ElementTitle:empty:before {content:attr(data-placeholder);color:#CCC}
     div.ElementWarning {margin-left:15px;margin-right:15px;margin-bottom:15px;padding:5px;background-color:#faa9a9;border:1px #e52323 solid}
     div#ElementsContainer {column-fill:balance;column-gap:5px}
     form#Settings {padding-bottom:15px}
@@ -428,12 +492,11 @@
     form#Settings input[type="text"]:hover {border-color:#444}
     form#Settings input[type="text"]:focus {border-color:#000}
     form.Element {width:100%;background-color:#F0F0F0;transition:background-color 0.5s;margin:0}
+    form.ElementSelect {background-color:#cfeef4}
     form, fieldset {-webkit-column-break-inside:avoid;page-break-inside:avoid;break-inside:avoid}
-    form.Element:hover {background-color:#cfeef4}
-    form.Element input {background-color:transparent;border-width:1px;border-color:transparent}
     table.TimeDisplay {padding-bottom:10px;text-align:center;margin-left:auto;margin-right:auto}
     table.TimeDisplay td {padding:0rem 0.5rem}
-    table.TimeDisplay input[type="text"] {text-align:center;width:5.5rem;font-size:4rem;color:#444;border-width:0px 0px 3px 0px;border-color:#888;border-radius:0px;outline:none;margin:0;padding:0;transition:color 0.5s, border-color 0.5s}
+    table.TimeDisplay input[type="text"] {background-color:transparent;text-align:center;width:5.5rem;font-size:4rem;color:#444;border-width:0px 0px 3px 0px;border-color:#888;border-radius:0px;outline:none;margin:0;padding:0;transition:color 0.5s, border-color 0.5s}
     table.TimeDisplay input[type="text"]:hover {color:#222;border-color:#444}
     table.TimeDisplay input[type="text"]:focus {color:#000;border-color:#000}
     table.TimeDisplay input[type="text"]:disabled {color:#000;border-color:transparent}
@@ -442,15 +505,15 @@
     button.StartButton {border-color:transparent;font-weight:bold}
     button.StopButton {border-color:transparent;font-weight:bold}
     input[type="file"] {display:none}
-    input[type="text"] {-moz-appearance:textfield}
-    input[type="text"]::-webkit-outer-spin-button, input[type="text"]::-webkit-inner-spin-button {-webkit-appearance:none;margin:0}
     label.CheckboxContainer {display:block;position:relative;padding-left:20px;margin-bottom:12px;cursor: pointer;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none}
-    label.CheckboxContainer input[type="checkbox"] {position:absolute;opacity:0;cursor:pointer;height:0;width:0}
+    input[type="checkbox"] {display:none}
     label.CheckboxContainer span.Checkmark {position:absolute;top:0;left:0;height:15px;width:15px;background-color:#EEE;transition:background-color 0.5s}
+    label.CheckboxContainer span.Checkmark:after {content:"";position:absolute;display:block;left:6px;top:2px;width:2px;height:7px;border:solid transparent;border-width: 0 2px 2px 0;-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}
+    table.ElementHeader label.CheckboxContainer {display:inline-block;margin-right:5px}
+    table.ElementHeader label.CheckboxContainer span.Checkmark {background-color:#FFF}
+    table.ElementHeader label.CheckboxContainer span.Checkmark:after {border-color:#CCC}
     label.CheckboxContainer input[type="checkbox"]:checked ~ span.Checkmark {background-color:#2196F3}
-    label.CheckboxContainer span.Checkmark:after {content:"";position:absolute;display:none}
-    label.CheckboxContainer input[type="checkbox"]:checked ~ span.Checkmark:after {display:block}
-    label.CheckboxContainer span.Checkmark:after {left:6px;top:2px;width:2px;height:7px;border:solid #FFF;border-width: 0 2px 2px 0;-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}
+    label.CheckboxContainer input[type="checkbox"]:checked ~ span.Checkmark:after {border-color:#FFF}
     fieldset {margin-left:10px;margin-right:10px;margin-bottom:10px}
     fieldset legend {font-weight:bold;margin-bottom:10px}
     div.SubFieldset {margin-left:25px}
@@ -458,7 +521,9 @@
     table.StopwatchLaps {margin:0px auto;font-size:1.5rem}
     table.StopwatchLaps tr td:nth-child(1) {width:5rem;text-align:left;font-weight:bold}
     table.StopwatchLaps tr td:nth-child(2) {width:6rem;text-align:right}
+    span#NaviBarButtonsSelect {margin-right:20px}
     @media (hover:hover) {
+        form.Element:hover {background-color:#cfeef4}
         table.ElementHeader a:hover {color:#000}
         p.Footer a:hover {color:#444;text-decoration:underline}
         table.ElementHeader a.StartButton:hover {color:#016901}
@@ -474,7 +539,7 @@
     <form class="Element" id="Timer0" action="javascript:">
         <table class="ElementHeader">
         <tr>
-            <td><div class="ElementTitle" contenteditable="true" data-placeholder="Title for this timer..."></div></td>
+            <td><label class="CheckboxContainer"><input type="checkbox" name="SelectCheckbox" onchange="javascript:SelectCheckboxChange('Timer0')" /><span class="Checkmark"></span></label><span class="ElementTitle" contenteditable="true" data-placeholder="Title for this timer..."></span></td>
             <td style="text-align:right">
                 <span class="SmallButtonsSet">
                 <a class="StartButton" href="javascript:StartTimer(0)" id="SmallTimer0Start">START</a>
@@ -509,7 +574,7 @@
     <form class="Element" id="Stopwatch0" action="javascript:">
         <table class="ElementHeader">
         <tr>
-            <td><div class="ElementTitle" contenteditable="true" data-placeholder="Title for this stopwatch..."></div></td>
+            <td><label class="CheckboxContainer"><input type="checkbox" name="SelectCheckbox" onchange="javascript:SelectCheckboxChange('Stopwatch0')" /><span class="Checkmark"></span></label><span class="ElementTitle" contenteditable="true" data-placeholder="Title for this stopwatch..."></span></td>
             <td style="text-align:right">
                 <span class="SmallButtonsSet">
                 <a class="StartButton" href="javascript:StartStopwatch(0)" id="SmallStopwatch0Start">START</a>
@@ -541,7 +606,10 @@
     <table class="ElementHeader" id="NaviBar">
         <tr>
             <td><a href="javascript:AddElement('timer')">+ timer</a> <a href="javascript:AddElement('Stopwatch')">+ stopwatch</a> <a href="javascript:ShowSettings()" id="NaviBarSettingsTab">settings</a></td>
-            <td><span style="margin-right:10px">ALL /</span><a class="StartButton" href="javascript:StartAll()">START</a> <a class="StopButton" href="javascript:StopAll()">STOP</a></td>
+            <td>
+                <span id="NaviBarButtonsSelected" style="display:none"><span style="margin-right:10px">Selected /</span><a class="StartButton" href="javascript:StartSelected()">START</a> <a class="StopButton" href="javascript:StopSelected()">STOP</a></span>
+                <span id="NaviBarButtonsAll"><span style="margin-right:10px">All /</span><a class="StartButton" href="javascript:StartAll()">START</a> <a class="StopButton" href="javascript:StopAll()">STOP</a></span>
+            </td>
         </tr>
     </table>
     <div id="NaviBarAfter"></div>
@@ -565,7 +633,7 @@
         <fieldset>
             <legend>Sound</legend>
             <div class="ElementWarning" id="SettingsSoundWarningBanner" style="display:none"><b>Unable to apply settings:</b> <span id="SettingsSoundWarningMessage"></span></div>
-            <label class="CheckboxContainer">Play a sound when timer reaches zero<input type="checkbox" name="PlaySound" onchange="javascript:document.getElementById('EmptyAudio').play()" /><span class="Checkmark"></span><audio id="EmptyAudio"></audio></label>
+            <label class="CheckboxContainer">Play a sound when timer reaches zero<input type="checkbox" name="PlaySound" onchange="javascript:PlayEmptyAudio()" /><span class="Checkmark"></span><audio id="EmptyAudio"></audio></label>
             <div class="SubFieldset">
                 <label class="CheckboxContainer">Custom sound file<input type="checkbox" name="CustomSound" onchange="javascript:ChangeCustomSound()" /><span class="Checkmark"></span> <span id="CustomSoundFilenameContainer" style="display:none">(<span id="CustomSoundFilename"></span> - <a href="javascript:LaunchCustomSound()">change</a>)</span></label><input type="file" name="CustomSoundFile" onchange="javascript:ChangeCustomSoundFile()" accept="audio/*,audio/x-m4a" />
                 <label class="CheckboxContainer">Loop sound file<input type="checkbox" name="LoopSoundFile"/><span class="Checkmark"></span></label>
@@ -601,6 +669,6 @@
     <div id="ElementsContainer">
         <div id="Element1Container"></div>
     </div>
-    <p class="Footer"><a href="http://leesteve.tk/" target="_blank">&copy; &#64;AllTimes 0.3.0 by Steve's Toolkit</a> <a href="https://github.com/leestevetk/AllTimes" target="_blank">(GitHub)</a> - <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">Licensed under GPLv3</a></p>
+    <p class="Footer"><a href="http://leesteve.tk/" target="_blank">&copy; &#64;AllTimes 0.4.0 by Steve's Toolkit</a> <a href="https://github.com/leestevetk/AllTimes" target="_blank">(GitHub)</a> - <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank">Licensed under GPLv3</a></p>
 </body>
 </html>
