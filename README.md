@@ -3,7 +3,7 @@
 <p><i>#Online Timer #Online Stopwatch</i></p>
 
 ## Launch or Download
-The latest version of @AllTimes is 0.4.0 (20190807). You may launch and try it <a href="https://leesteve.tk/AllTimes/releases/AtAllTimes-0.4.0.html">right here</a>. If you want to download it for offline use, <a href="https://leesteve.tk/AllTimes/releases/AtAllTimes-0.4.0.zip">please click here</a>.
+The latest version of @AllTimes is 0.4.0 (20190807). You may [launch and try it right here](https://leestevetk.github.io/AllTimes/releases/AtAllTimes-0.4.0.html) or [download it for offline use](https://leestevetk.github.io/AllTimes/releases/AtAllTimes-0.4.0.zip).
 
 ## Features
 
